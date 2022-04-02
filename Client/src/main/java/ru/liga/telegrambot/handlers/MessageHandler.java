@@ -21,6 +21,7 @@ public class MessageHandler {
     public BotApiMethod<?> handle(Message message, BotState botState) {
         long userId = message.getFrom().getId();
         long chatId = message.getChatId();
+
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
 
@@ -29,37 +30,51 @@ public class MessageHandler {
                 botStateCache.saveBotState(userId, BotState.ENTERGENDER);
                 userCache.saveUserCache(userId, new User());
                 userCache.getUserMap().get(userId).setId(userId);
+
                 sendMessage.setText("Вы сударъ иль сударыня?");
                 sendMessage.setReplyMarkup(buttonService.getInlineMessageGender());
+
                 return sendMessage;
             case ("ENTERGENDER"):
+                sendMessage.setText("Используйте меню для выбора.\n" +
+                        "Вы сударъ иль сударыня?");
+                sendMessage.setReplyMarkup(buttonService.getInlineMessageGender());
+
+                return sendMessage;
             case ("ENTERGENDERSEARCH"):
-                sendMessage.setText("Выберете полъ.");
-                sendMessage.setReplyMarkup(buttonService.getInlineKeyboardMarkup());
+                sendMessage.setText("Используйте меню для выбора.\n" +
+                        "Кого вы ищите?");
+                sendMessage.setReplyMarkup(buttonService.getInlineMessageSearchGender());
+
                 return sendMessage;
             case ("ENTERNAME"):
                 botStateCache.saveBotState(userId, BotState.ENTERDESCRIPTION);
                 userCache.getUserMap().get(userId).setName(message.getText());
+
                 sendMessage.setText("Опишите себя.");
+
                 return sendMessage;
             case ("ENTERDESCRIPTION"):
                 botStateCache.saveBotState(userId, BotState.ENTERGENDERSEARCH);
                 userCache.getUserMap().get(userId).setDescription(message.getText());
+
                 sendMessage.setText("Кого вы ищите?");
                 sendMessage.setReplyMarkup(buttonService.getInlineMessageSearchGender());
+
                 return sendMessage;
             case ("MENU"):
                 sendMessage.setText("Используйте представленное меню.");
                 sendMessage.setReplyMarkup(buttonService.getInlineMessageMenu());
+
                 return sendMessage;
             case ("SEARCH"):
             case ("FAVORITES"):
                 sendMessage.setText("Используйте представленное меню.");
-                sendMessage.setReplyMarkup(buttonService.getInlineKeyboardMarkup());
+                sendMessage.setReplyMarkup(buttonService.getInlineMessageSearch());
+
                 return sendMessage;
             default:
-                sendMessage.setText("Oops...");
-                return sendMessage;
+                return null;
         }
     }
 }

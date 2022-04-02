@@ -2,6 +2,7 @@ package ru.liga.telegrambot.configs;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import ru.liga.telegrambot.telegram.Bot;
 import ru.liga.telegrambot.telegram.TelegramFacade;
@@ -29,5 +30,10 @@ public class AppConfig {
         bot.setBotToken(bot.getBotToken());
 
         return bot;
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }
