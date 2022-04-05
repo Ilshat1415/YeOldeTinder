@@ -1,0 +1,19 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="002-create-accounts_favorites" author="ilshat">
+        <createTable tableName="accounts_favorites">
+            <column name="user_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fko11riww80jbxm11v4oqwyr23" references="accounts(id)"/>
+            </column>
+            <column name="favorites_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="fksr9vydecprxhxlw8dnfjb7p4f" references="accounts(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

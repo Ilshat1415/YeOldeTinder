@@ -1,5 +1,7 @@
 package ru.liga.utils;
 
+import org.springframework.stereotype.Service;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -9,9 +11,10 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Service
 public class PreReformTranslator {
 
-    private Pattern iPattern = Pattern.compile("и[^ауоыиэяюёей]");
+    private Pattern iPattern = Pattern.compile("и[ауоыиэяюёей]");
     private Pattern erPattern = Pattern.compile("[^\\sауоыиэяюёей]$");
     private final Map<String, String> yatMap;
 

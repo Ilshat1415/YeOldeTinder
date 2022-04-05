@@ -17,9 +17,13 @@ public class SearchedUsersCache {
     private final ServerDataService serverDataService;
 
     public User getSearchedUsersById(long userId) {
-        if (searchedUsers.get(userId) == null) {
-            return null;
+        if (searchedUsers.get(userId).isEmpty()) {
+            refresh(userId);
+            if (searchedUsers.get(userId).isEmpty()) {
+                return null;
+            }
         }
+
         User user = searchedUsers.get(userId).getFirst();
 
         Collections.rotate(searchedUsers.get(userId), -1);
@@ -27,11 +31,15 @@ public class SearchedUsersCache {
         return user;
     }
 
-    public Long getFoundUserId(long userId) {
+    public Long getFoundUserById(long userId) {
         return searchedUsers.get(userId).removeLast().getId();
     }
 
-    public void refreshCache(long userId) {
+    public void refresh(long userId) {
         searchedUsers.put(userId, serverDataService.getSearchedUsersById(userId));
+    }
+
+    public void dump(long userId) {
+        searchedUsers.remove(userId);
     }
 }

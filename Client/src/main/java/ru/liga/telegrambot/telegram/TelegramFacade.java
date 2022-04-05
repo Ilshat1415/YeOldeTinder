@@ -38,8 +38,8 @@ public class TelegramFacade {
         BotState botState;
 
         if (botStateCache.getBotStateMap().get(userId) == null) {
-            botState = serverDataService.getUserById(userId) == null ?
-                    BotState.START : BotState.MENU;
+            botState = serverDataService.existsUserById(userId) ?
+                    BotState.MENU : BotState.START;
             botStateCache.saveBotState(userId, botState);
         } else {
             botState = botStateCache.getBotStateMap().get(userId);

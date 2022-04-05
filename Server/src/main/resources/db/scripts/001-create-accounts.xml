@@ -1,0 +1,20 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+        xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+		http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="001-create-accounts" author="ilshat">
+        <createTable tableName="accounts">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="gender" type="varchar(255)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="description" type="varchar(1024)"/>
+            <column name="gender_search" type="varchar(255)"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

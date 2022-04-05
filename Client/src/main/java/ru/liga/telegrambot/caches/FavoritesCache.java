@@ -13,24 +13,28 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class FavoritesCache {
-    private final Map<Long, LinkedList<User>> favoritesMap = new HashMap<>();
+    private final Map<Long, LinkedList<User>> favorites = new HashMap<>();
     private final ServerDataService serverDataService;
 
     public User getProfileForUserFavorites(long userId) {
-        favoritesMap.put(userId, serverDataService.getFavoritesById(userId));
+        favorites.put(userId, serverDataService.getFavoritesById(userId));
 
-        return favoritesMap.get(userId).peek();
+        return favorites.get(userId).peek();
     }
 
     public User userFavoritesLeft(long userId) {
-        Collections.rotate(favoritesMap.get(userId), 1);
+        Collections.rotate(favorites.get(userId), 1);
 
-        return favoritesMap.get(userId).peek();
+        return favorites.get(userId).peek();
     }
 
     public User userFavoritesRight(long userId) {
-        Collections.rotate(favoritesMap.get(userId), -1);
+        Collections.rotate(favorites.get(userId), -1);
 
-        return favoritesMap.get(userId).peek();
+        return favorites.get(userId).peek();
+    }
+
+    public void dump(long userId) {
+        favorites.remove(userId);
     }
 }

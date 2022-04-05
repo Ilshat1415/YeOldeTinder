@@ -11,14 +11,14 @@ import java.util.List;
 @Service
 public class ButtonService {
 
-    public InlineKeyboardMarkup getInlineMessageGender() {
+    public InlineKeyboardMarkup getGenderKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Сударъ", "buttonMale"),
                 createButton("Сударыня", "buttonFemale")
         );
     }
 
-    public InlineKeyboardMarkup getInlineMessageSearchGender() {
+    public InlineKeyboardMarkup getGenderSearchKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Сударъ", "buttonMale"),
                 createButton("Сударыня", "buttonFemale"),
@@ -26,7 +26,7 @@ public class ButtonService {
         );
     }
 
-    public InlineKeyboardMarkup getInlineMessageMenu() {
+    public InlineKeyboardMarkup getMenuKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Поиск", "buttonSearch"),
                 createButton("Анкета", "buttonProfile"),
@@ -34,7 +34,25 @@ public class ButtonService {
         );
     }
 
-    public InlineKeyboardMarkup getInlineMessageSearch() {
+    public InlineKeyboardMarkup getProfileKeyboard() {
+        return createInlineKeyboardMarkup(
+                createButton("Изменить", "buttonChange"),
+                createButton("Меню", "buttonMenu")
+        );
+    }
+
+    public InlineKeyboardMarkup getChangeKeyboard() {
+        return createInlineKeyboardMarkup(
+                createButton("Пол", "buttonGender"),
+                createButton("Имя", "buttonName"),
+                createButton("Пол искомых анкет", "buttonGenderSearch"),
+                createButton("Описание", "buttonDescription"),
+                createButton("Сохранить", "buttonSave"),
+                createButton("Отменить", "buttonCancel")
+        );
+    }
+
+    public InlineKeyboardMarkup getSearchKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Влево", "buttonLeft"),
                 createButton("Вправо", "buttonRight"),

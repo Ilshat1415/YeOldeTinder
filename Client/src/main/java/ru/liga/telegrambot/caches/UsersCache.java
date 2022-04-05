@@ -11,10 +11,14 @@ import java.util.Map;
 @Getter
 @Setter
 @Service
-public class UserCache {
-    private final Map<Long, User> userMap = new HashMap<>();
+public class UsersCache {
+    private final Map<Long, User> users = new HashMap<>();
 
     public void saveUserCache(long userId, User user) {
-        userMap.put(userId, user);
+        users.put(userId, user);
+    }
+
+    public void dump(long userId) {
+        users.remove(userId);
     }
 }

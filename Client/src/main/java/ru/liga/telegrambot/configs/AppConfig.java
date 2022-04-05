@@ -25,9 +25,9 @@ public class AppConfig {
     @Bean
     public Bot springWebhookBot(SetWebhook setWebhook, TelegramFacade telegramFacade) {
         Bot bot = new Bot(setWebhook, telegramFacade);
-        bot.setBotPath(bot.getBotPath());
-        bot.setBotUsername(bot.getBotUsername());
-        bot.setBotToken(bot.getBotToken());
+        bot.setBotPath(botConfig.getBotPath());
+        bot.setBotUsername(botConfig.getBotUsername());
+        bot.setBotToken(botConfig.getBotToken());
 
         return bot;
     }

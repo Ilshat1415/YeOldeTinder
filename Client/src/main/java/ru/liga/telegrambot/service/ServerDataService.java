@@ -19,15 +19,23 @@ public class ServerDataService {
     @Value("${server.api-url}")
     private String serverPath;
 
-    public User getUserById(long userId) {
-        return restTemplate.getForObject(serverPath + "/users/" + userId, User.class);
+    public boolean existsUserById(long userId) {
+        return Boolean.TRUE.equals(restTemplate.getForObject(serverPath + "/users/" + userId, boolean.class));
     }
 
-    public String createProfile(User user) {
+    public User getUserById(long userId) {
+        return restTemplate.getForObject(serverPath + "/users/" + userId + "/get", User.class);
+    }
+
+    public User getUserImageById(long userId) {
+        return restTemplate.getForObject(serverPath + "/users/" + userId + "/getImage", User.class);
+    }
+
+    public User createProfile(User user) {
         return restTemplate.postForObject(
                 "http://localhost:8080/createProfile",
                 user,
-                String.class
+                User.class
         );
     }
 
