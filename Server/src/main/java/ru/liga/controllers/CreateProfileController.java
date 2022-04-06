@@ -31,6 +31,10 @@ public class CreateProfileController {
             user.setDescription(user.getDescription().substring(0, 511));
         }
 
+        if (usersRepository.existsById(user.getId())) {
+            user.setFavorites(usersRepository.getById(user.getId()).getFavorites());
+        }
+
         usersRepository.save(user);
         imageEncodingService.encodeTheDescription(user);
 

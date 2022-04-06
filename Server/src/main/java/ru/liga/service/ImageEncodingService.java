@@ -16,32 +16,45 @@ public class ImageEncodingService {
 
     @SneakyThrows
     public void encodeTheDescription(User user) {
-        ImgWriter imgWriter = new ImgWriter();
-        String text = user.getDescription().toLowerCase();
-        String firstWord = text.substring(0, text.indexOf(' '));
-        text = text.substring(text.indexOf(' ') + 1);
-
-        float sizeHeadline = (float) Math.floor(Math.sqrt(60 * 250 * 2 / (1.2 * firstWord.length())));
-        float sizeDescription = (float) Math.floor(Math.sqrt(426 * 526 * 2 / (1.2 * text.length())));
+        String description = user.getDescription();
         int x = 50;
         int y = 100;
+        int lineWidth = 526;
+
+        ImgWriter imgWriter = new ImgWriter();
+
+        String headline;
+        String text = "";
+        if (description.contains(" ")) {
+            headline = description.substring(0, description.indexOf(' '));
+            text = description.substring(description.indexOf(' ') + 1);
+        } else {
+            headline = description;
+        }
+
+        float sizeDescription = 32f;
+        if (text.length() > 128) {
+            sizeDescription -= (text.length() - 128) / 69f;
+        }
+        float sizeHeadline = sizeDescription * 2f;
 
         imgWriter = imgWriter.setColor(Color.BLACK)
                 .setFont(Font.decode("Old Standard TT").deriveFont(Font.BOLD, sizeHeadline))
-                .write(firstWord, x, y)
+                .write(headline, x, y)
                 .setFont(Font.decode("Old Standard TT").deriveFont(Font.PLAIN, sizeDescription));
 
-        int size = (int) (526 * 2 / sizeDescription);
+        int numberOfCharacters = (int) (2 * lineWidth / sizeDescription);
         y += (int) sizeDescription * 1.5;
         while (true) {
-            if (text.length() > size && text.contains(" ")) {
-                imgWriter = imgWriter.write(text.substring(0, size), x, y);
-                text = text.substring(size);
+            if (text.length() > numberOfCharacters && text.contains(" ")) {
+                int index = text.lastIndexOf(' ', numberOfCharacters);
+                imgWriter = imgWriter.write(text.substring(0, index), x, y);
+                text = text.substring(index + 1);
             } else {
                 imgWriter = imgWriter.write(text, x, y);
                 break;
             }
-            y += (int) sizeDescription * 1.2;
+            y += (int) sizeDescription * 1.15;
         }
 
         File file = File.createTempFile(String.valueOf(user.getId()), ".jpg");

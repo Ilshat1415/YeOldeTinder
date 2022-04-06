@@ -19,7 +19,7 @@ public class UsersService {
 
         List<User> users = usersRepository.findAll()
                 .stream()
-                .filter(user -> user.getId() != userId)
+                .filter(user -> !user.getId().equals(userId))
                 .filter(user -> !userById.getFavorites().contains(user))
                 .filter(user -> {
                     if (!"Всех".equals(user.getGenderSearch())) {
