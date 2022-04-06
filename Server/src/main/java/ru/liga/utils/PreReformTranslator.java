@@ -14,33 +14,25 @@ import java.util.regex.Pattern;
 @Service
 public class PreReformTranslator {
 
-    private Pattern iPattern = Pattern.compile("и[ауоыиэяюёей]");
-    private Pattern erPattern = Pattern.compile("[^\\sауоыиэяюёей]$");
+    private Pattern iPattern = Pattern.compile("(и(?=[ауоыэяюёей]))");
+    private Pattern erPattern = Pattern.compile("([^\\sауоыиэяюёе])(?= |$)");
     private final Map<String, String> yatMap;
 
-    PreReformTranslator() throws IOException {
+    public PreReformTranslator() throws IOException {
         yatMap = getYatFromMap("/yatReplace.txt");
     }
 
     private String iRule(String toCheck) {
-        Matcher matcher = iPattern.matcher(toCheck);
-        StringBuffer sb = new StringBuffer(toCheck);
-        while (matcher.find()) {
-            sb.replace(matcher.start(), matcher.start() + 1, "i");
-        }
-        return sb.toString();
+        return toCheck.replaceAll(iPattern.pattern(), "i");
     }
 
     private String erRule(String toCheck) {
-        Matcher matcher = erPattern.matcher(toCheck);
-        while (matcher.find()) {
-            toCheck += "ъ";
-        }
-        return toCheck;
+        return toCheck.replaceAll(erPattern.pattern(), "$1ъ");
     }
 
     private String fiRule(String toCheck) {
-        return toCheck.replace("ф", "ѳ");
+        return toCheck.replace("Ф", "Ѳ")
+                .replace("ф", "ѳ");
     }
 
     private String yatRule(String toCheck) {
