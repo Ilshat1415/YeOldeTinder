@@ -8,14 +8,13 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class PreReformTranslator {
 
     private Pattern iPattern = Pattern.compile("(и(?=[ауоыэяюёей]))");
-    private Pattern erPattern = Pattern.compile("([^\\sауоыиэяюёе])(?= |$)");
+    private Pattern erPattern = Pattern.compile("((\\p{L}+)([[а-я]&&[^ауоыэяюёей]])\\b)");
     private final Map<String, String> yatMap;
 
     public PreReformTranslator() throws IOException {
@@ -36,11 +35,17 @@ public class PreReformTranslator {
     }
 
     private String yatRule(String toCheck) {
-        String rs = yatMap.get(toCheck);
-        if (rs == null) {
-            return toCheck;
+        String[] checkList = toCheck.split(" +");
+
+        for(String s : checkList) {
+            String tmp = s.replaceAll("([^\\p{L}])", "");
+            String rs = yatMap.get(tmp);
+            if (rs != null) {
+                toCheck = toCheck.replace(tmp, rs);
+            }
         }
-        return rs;
+
+        return toCheck;
     }
 
     private Map<String, String> getYatFromMap(String path) throws IOException {
