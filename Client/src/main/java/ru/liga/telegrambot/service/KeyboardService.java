@@ -8,24 +8,42 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Сервис создания клавиатур для встраивания в сообщения.
+ */
 @Service
-public class ButtonService {
+public class KeyboardService {
 
+    /**
+     * Получение клавиатуры для выбора пола.
+     *
+     * @return клавиатура для выбора пола
+     */
     public InlineKeyboardMarkup getGenderKeyboard() {
         return createInlineKeyboardMarkup(
-                createButton("Сударъ", "buttonMale"),
+                createButton("Сударь", "buttonMale"),
                 createButton("Сударыня", "buttonFemale")
         );
     }
 
+    /**
+     * Получение клавиатуры для выбора искомого пола.
+     *
+     * @return клавиатура для выбора искомого пола
+     */
     public InlineKeyboardMarkup getGenderSearchKeyboard() {
         return createInlineKeyboardMarkup(
-                createButton("Сударъ", "buttonMale"),
+                createButton("Сударь", "buttonMale"),
                 createButton("Сударыня", "buttonFemale"),
                 createButton("Всех", "buttonAll")
         );
     }
 
+    /**
+     * Получение клавиатуры меню.
+     *
+     * @return клавиатура меню
+     */
     public InlineKeyboardMarkup getMenuKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Поиск", "buttonSearch"),
@@ -34,6 +52,11 @@ public class ButtonService {
         );
     }
 
+    /**
+     * Получение клавиатуры профиль.
+     *
+     * @return клавиатура профиль
+     */
     public InlineKeyboardMarkup getProfileKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Изменить", "buttonChange"),
@@ -41,6 +64,11 @@ public class ButtonService {
         );
     }
 
+    /**
+     * Получение клавиатуры для изменния профиля.
+     *
+     * @return клавиатура для изменния профиля
+     */
     public InlineKeyboardMarkup getChangeKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Пол", "buttonGender"),
@@ -52,6 +80,11 @@ public class ButtonService {
         );
     }
 
+    /**
+     * Получение клавиатуры для перебор пользователей.
+     *
+     * @return клавиатура для перебор пользователей
+     */
     public InlineKeyboardMarkup getSearchKeyboard() {
         return createInlineKeyboardMarkup(
                 createButton("Влево", "buttonLeft"),
@@ -60,6 +93,13 @@ public class ButtonService {
         );
     }
 
+    /**
+     * Создание встраиваемой кнопки.
+     *
+     * @param text         текст на кнопке
+     * @param callBackData название кнопки
+     * @return кнопка
+     */
     private InlineKeyboardButton createButton(String text, String callBackData) {
         return InlineKeyboardButton.builder()
                 .text(text)
@@ -67,10 +107,16 @@ public class ButtonService {
                 .build();
     }
 
+    /**
+     * Создание из переданных кнопок встроенную разметку клавиатуры.
+     *
+     * @param buttons кнопки
+     * @return клавиатура для встраивания в сообщение
+     */
     private InlineKeyboardMarkup createInlineKeyboardMarkup(InlineKeyboardButton... buttons) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
         List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
 
         for (int i = 0; i < buttons.length; i++) {
             keyboardButtonsRow.add(buttons[i]);

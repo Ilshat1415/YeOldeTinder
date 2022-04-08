@@ -1,72 +1,60 @@
 package ru.liga.service;
 
-import lombok.SneakyThrows;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.liga.entities.User;
 import ru.liga.utils.ImgWriter;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Base64;
 
+/**
+ * Сервис создания закодированных образов анкет
+ */
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class ImageEncodingService {
+    /**
+     * Утилита для втраивания текста в картинку.
+     */
+    private final ImgWriter imgWriter;
 
-    @SneakyThrows
+    /**
+     * Кодирование описания пользователя в виде образа в формате Base64.
+     *
+     * @param user пользователь
+     */
     public void encodeTheDescription(User user) {
         String description = user.getDescription();
-        int x = 50;
-        int y = 100;
-        int lineWidth = 526;
-
-        ImgWriter imgWriter = new ImgWriter();
 
         String headline;
         String text = "";
         if (description.contains(" ")) {
             headline = description.substring(0, description.indexOf(' '));
             text = description.substring(description.indexOf(' ') + 1);
+
         } else {
             headline = description;
         }
 
-        float sizeDescription = 32f;
-        if (text.length() > 128) {
-            sizeDescription -= (text.length() - 128) / 69f;
-        }
-        float sizeHeadline = sizeDescription * 2f;
+        try {
+            File file = File.createTempFile(String.valueOf(user.getId()), ".jpg");
+            ImageIO.write(imgWriter.createImageByDescription(headline, text), "jpg", file);
 
-        imgWriter = imgWriter.setColor(Color.BLACK)
-                .setFont(Font.decode("Old Standard TT").deriveFont(Font.BOLD, sizeHeadline))
-                .write(headline, x, y)
-                .setFont(Font.decode("Old Standard TT").deriveFont(Font.PLAIN, sizeDescription));
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                byte[] bytes = new byte[(int) file.length()];
+                fileInputStream.read(bytes);
 
-        int numberOfCharacters = (int) (2 * lineWidth / sizeDescription);
-        y += (int) sizeDescription * 1.5;
-        while (true) {
-            if (text.length() > numberOfCharacters && text.contains(" ")) {
-                int index = text.lastIndexOf(' ', numberOfCharacters);
-                imgWriter = imgWriter.write(text.substring(0, index), x, y);
-                text = text.substring(index + 1);
-            } else {
-                imgWriter = imgWriter.write(text, x, y);
-                break;
+                user.setDescription(Base64.getEncoder().encodeToString(bytes));
             }
-            y += (int) sizeDescription * 1.15;
-        }
-
-        File file = File.createTempFile(String.valueOf(user.getId()), ".jpg");
-        ImageIO.write(imgWriter.getImage(), "jpg", file);
-
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            byte[] bytes = new byte[(int) file.length()];
-            fileInputStream.read(bytes);
-            String encodedFile = Base64.getEncoder().encodeToString(bytes);
-            user.setDescription(encodedFile);
-        } finally {
-            file.delete();
+        } catch (IOException e) {
+            log.error("Ошибка {}. Создание временного файла. Пользователь: {}",
+                    e.getMessage(), user.getId(), e);
         }
     }
 }

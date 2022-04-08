@@ -5,37 +5,34 @@ import org.springframework.http.HttpEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.liga.entities.User;
-import ru.liga.repositories.UsersRepository;
 import ru.liga.service.ImageEncodingService;
-import ru.liga.utils.PreReformTranslator;
+import ru.liga.service.UsersService;
 
+/**
+ * Контроллер отвечающий за создания профиля по запросу.
+ */
 @RestController
 @RequiredArgsConstructor
 public class CreateProfileController {
+    /**
+     * Сервис создания закодированных образов анкет
+     */
     private final ImageEncodingService imageEncodingService;
-    private final PreReformTranslator preReformTranslator;
-    private final UsersRepository usersRepository;
+    /**
+     * Сервис работы с пользователями.
+     */
+    private final UsersService usersService;
 
+    /**
+     * Реакция на POST запрос создания профиля.
+     *
+     * @param request запрос
+     * @return профиль ользователя
+     */
     @PostMapping("/createProfile")
     public User signUpUser(HttpEntity<User> request) {
         User user = request.getBody();
-        user.setName(preReformTranslator.translateName(user.getName()));
-
-        if (user.getDescription().length() > 255) {
-            user.setDescription(user.getDescription().substring(0, 254));
-        }
-
-        user.setDescription(preReformTranslator.translateName(user.getDescription()));
-
-        if (user.getDescription().length() > 512) {
-            user.setDescription(user.getDescription().substring(0, 511));
-        }
-
-        if (usersRepository.existsById(user.getId())) {
-            user.setFavorites(usersRepository.getById(user.getId()).getFavorites());
-        }
-
-        usersRepository.save(user);
+        usersService.createProfileUser(user);
         imageEncodingService.encodeTheDescription(user);
 
         return user;

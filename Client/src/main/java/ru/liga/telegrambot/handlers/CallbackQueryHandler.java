@@ -1,5 +1,6 @@
 package ru.liga.telegrambot.handlers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
@@ -10,43 +11,77 @@ import ru.liga.telegrambot.caches.FavoritesCache;
 import ru.liga.telegrambot.caches.SearchedUsersCache;
 import ru.liga.telegrambot.caches.UsersCache;
 import ru.liga.telegrambot.entities.User;
-import ru.liga.telegrambot.service.ButtonService;
+import ru.liga.telegrambot.service.KeyboardService;
 import ru.liga.telegrambot.service.ServerDataService;
 import ru.liga.telegrambot.telegram.Bot;
 import ru.liga.telegrambot.telegram.BotState;
 
+/**
+ * Обработчик нажатий на встроенные в сообщения кнопки.
+ */
+@Slf4j
 @Component
 public class CallbackQueryHandler {
-    private final BotStateCache botStateCache;
-    private final ButtonService buttonService;
+    /**
+     * Сервис серверных данных.
+     */
     private final ServerDataService serverDataService;
-    private final UsersCache usersCache;
+    /**
+     * Сервис клавиатур.
+     */
+    private final KeyboardService keyboardService;
+    /**
+     * Кеш искомых пользователей.
+     */
     private final SearchedUsersCache searchedUsersCache;
+    /**
+     * Кеш любимцев.
+     */
     private final FavoritesCache favoritesCache;
+    /**
+     * Кеш состояний бота.
+     */
+    private final BotStateCache botStateCache;
+    /**
+     * Кеш пользователей.
+     */
+    private final UsersCache usersCache;
+    /**
+     * Telegram-бот.
+     */
     private final Bot bot;
 
-    public CallbackQueryHandler(BotStateCache botStateCache,
-                                ButtonService buttonService,
-                                ServerDataService serverDataService,
-                                UsersCache usersCache,
-                                SearchedUsersCache searchedUsersCache,
-                                FavoritesCache favoritesCache,
-                                @Lazy Bot bot) {
-        this.botStateCache = botStateCache;
-        this.buttonService = buttonService;
+    public CallbackQueryHandler(
+            ServerDataService serverDataService,
+            KeyboardService keyboardService,
+            SearchedUsersCache searchedUsersCache,
+            FavoritesCache favoritesCache,
+            BotStateCache botStateCache,
+            UsersCache usersCache,
+            @Lazy Bot bot
+    ) {
         this.serverDataService = serverDataService;
-        this.usersCache = usersCache;
+        this.keyboardService = keyboardService;
         this.searchedUsersCache = searchedUsersCache;
         this.favoritesCache = favoritesCache;
+        this.botStateCache = botStateCache;
+        this.usersCache = usersCache;
         this.bot = bot;
     }
 
+    /**
+     * Обработка обратного запроса от пользователя, такого как нажатие на кнопки.
+     *
+     * @param callbackQuery обратный запрос
+     * @return ответ на запрос
+     */
     public BotApiMethod<?> processCallbackQuery(CallbackQuery callbackQuery) {
+        SendMessage sendMessage = new SendMessage();
+
         long userId = callbackQuery.getFrom().getId();
         long chatId = callbackQuery.getMessage().getChatId();
-        String data = callbackQuery.getData();
+        String buttonData = callbackQuery.getData();
 
-        SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
 
         BotState botState = botStateCache.getBotStateMap().get(userId) == null ?
@@ -54,212 +89,355 @@ public class CallbackQueryHandler {
 
         switch (botState.name()) {
             case "ENTERGENDER":
-                reactionForEnterGender(userId, sendMessage, data);
-                return sendMessage;
+                reactionForEnterGender(userId, sendMessage, buttonData);
+                break;
+
             case "ENTERGENDERSEARCH":
-                reactionForEnterGenderSearch(userId, sendMessage, data);
-                return sendMessage;
+                reactionForEnterGenderSearch(userId, sendMessage, buttonData);
+                break;
+
             case "MENU":
-                reactionForMenu(userId, sendMessage, data);
-                return sendMessage;
+                reactionForMenu(userId, sendMessage, buttonData);
+                break;
+
             case "PROFILE":
-                reactionForProfile(userId, sendMessage, data);
-                return sendMessage;
+                reactionForProfile(userId, sendMessage, buttonData);
+                break;
+
             case "CHANGE":
-                reactionForChange(userId, sendMessage, data);
-                return sendMessage;
+                reactionForChange(userId, sendMessage, buttonData);
+                break;
+
             case "SETGENDER":
-                reactionForSetGender(userId, sendMessage, data);
-                return sendMessage;
+                reactionForSetGender(userId, sendMessage, buttonData);
+                break;
+
             case "SETGENDERSEARCH":
-                reactionForSetGenderSearch(userId, sendMessage, data);
-                return sendMessage;
+                reactionForSetGenderSearch(userId, sendMessage, buttonData);
+                break;
+
             case "SEARCH":
-                reactionForSearch(userId, sendMessage, data);
-                return sendMessage;
+                reactionForSearch(userId, sendMessage, buttonData);
+                break;
+
             case "FAVORITES":
-                reactionForFavorites(userId, sendMessage, data);
-                return sendMessage;
+                reactionForFavorites(userId, sendMessage, buttonData);
+                break;
+
             default:
+                log.debug("Пользователь: {}. Состояние бота: {}. Кнопка: {}. Запрос не обрабатывается.",
+                        userId, botState.name(), buttonData);
                 return null;
         }
+
+        log.debug("Пользователь: {}. Состояние бота: {}. Кнопка: {}. Запрос обработан.",
+                userId, botState.name(), buttonData);
+        return sendMessage;
     }
 
-    private void reactionForEnterGender(long userId, SendMessage sendMessage, String data) {
-        String gender = "buttonMale".equals(data) ? "Сударъ" : "Сударыня";
+    /**
+     * Рекация на выбор пола.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForEnterGender(long userId, SendMessage sendMessage, String buttonData) {
+        String gender = "buttonMale".equals(buttonData) ? "Сударь" : "Сударыня";
         usersCache.getUsers().get(userId).setGender(gender);
 
         botStateCache.saveBotState(userId, BotState.ENTERNAME);
+
         sendMessage.setText("Как вас величать?");
     }
 
-    private void reactionForEnterGenderSearch(long userId, SendMessage sendMessage, String data) {
+    /**
+     * Рекация на выбор искомого пола.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForEnterGenderSearch(long userId, SendMessage sendMessage, String buttonData) {
         String genderSearch;
-        if ("buttonMale".equals(data)) {
-            genderSearch = "Сударъ";
-        } else if ("buttonFemale".equals(data)) {
+        if ("buttonMale".equals(buttonData)) {
+            genderSearch = "Сударь";
+
+        } else if ("buttonFemale".equals(buttonData)) {
             genderSearch = "Сударыня";
+
         } else {
             genderSearch = "Всех";
         }
+
         usersCache.getUsers().get(userId).setGenderSearch(genderSearch);
-
         User user = serverDataService.createProfile(usersCache.getUsers().get(userId));
-
         usersCache.dump(userId);
+
         botStateCache.saveBotState(userId, BotState.MENU);
-        bot.sendPhoto(sendMessage.getChatId(), user, buttonService.getMenuKeyboard());
+
+        bot.sendPhoto(
+                sendMessage.getChatId(),
+                user,
+                keyboardService.getMenuKeyboard()
+        );
     }
 
-    private void reactionForMenu(long userId, SendMessage sendMessage, String data) {
-        if ("buttonProfile".equals(data)) {
+    /**
+     * Рекация на использование клавиатуры в меню.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForMenu(long userId, SendMessage sendMessage, String buttonData) {
+        if ("buttonProfile".equals(buttonData)) {
             botStateCache.saveBotState(userId, BotState.PROFILE);
+
             bot.sendPhoto(
                     sendMessage.getChatId(),
                     serverDataService.getUserImageById(userId),
-                    buttonService.getProfileKeyboard()
+                    keyboardService.getProfileKeyboard()
             );
-        } else if ("buttonSearch".equals(data)) {
+        } else if ("buttonSearch".equals(buttonData)) {
             searchedUsersCache.refresh(userId);
             User foundUser = searchedUsersCache.getSearchedUsersById(userId);
-
             if (foundUser != null) {
                 botStateCache.saveBotState(userId, BotState.SEARCH);
-                bot.sendPhoto(sendMessage.getChatId(), foundUser, buttonService.getSearchKeyboard());
+
+                bot.sendPhoto(
+                        sendMessage.getChatId(),
+                        foundUser,
+                        keyboardService.getSearchKeyboard()
+                );
+
             } else {
                 sendMessage.setText("Ни кого нѣтъ.");
-                sendMessage.setReplyMarkup(buttonService.getMenuKeyboard());
+                sendMessage.setReplyMarkup(keyboardService.getMenuKeyboard());
             }
-        } else if ("buttonFavorites".equals(data)) {
-            User favorite = favoritesCache.getProfileForUserFavorites(userId);
 
+        } else if ("buttonFavorites".equals(buttonData)) {
+            User favorite = favoritesCache.getProfileForUserFavorites(userId);
             if (favorite != null) {
                 botStateCache.saveBotState(userId, BotState.FAVORITES);
-                bot.sendPhoto(sendMessage.getChatId(), favorite, buttonService.getSearchKeyboard());
+
+                bot.sendPhoto(
+                        sendMessage.getChatId(),
+                        favorite,
+                        keyboardService.getSearchKeyboard()
+                );
+
             } else {
                 sendMessage.setText("У васъ нѣтъ любимцевъ.");
-                sendMessage.setReplyMarkup(buttonService.getMenuKeyboard());
+                sendMessage.setReplyMarkup(keyboardService.getMenuKeyboard());
             }
         }
     }
 
-    private void reactionForProfile(long userId, SendMessage sendMessage, String data) {
-        if ("buttonChange".equals(data)) {
-            botStateCache.saveBotState(userId, BotState.CHANGE);
+    /**
+     * Рекация на использование клавиатуры в профиле.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForProfile(long userId, SendMessage sendMessage, String buttonData) {
+        if ("buttonChange".equals(buttonData)) {
             usersCache.saveUserCache(userId, serverDataService.getUserById(userId));
+
+            botStateCache.saveBotState(userId, BotState.CHANGE);
+
             sendMessage.setText("Что желаете помѣнять?");
-            sendMessage.setReplyMarkup(buttonService.getChangeKeyboard());
-        } else if ("buttonMenu".equals(data)) {
+            sendMessage.setReplyMarkup(keyboardService.getChangeKeyboard());
+
+        } else if ("buttonMenu".equals(buttonData)) {
             botStateCache.saveBotState(userId, BotState.MENU);
+
             sendMessage.setText("Возвратъ въ меню");
-            sendMessage.setReplyMarkup(buttonService.getMenuKeyboard());
+            sendMessage.setReplyMarkup(keyboardService.getMenuKeyboard());
         }
     }
 
-    private void reactionForChange(long userId, SendMessage sendMessage, String data) {
-        if ("buttonGender".equals(data)) {
+    /**
+     * Рекация на использование клавиатуры в изменении профиля.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForChange(long userId, SendMessage sendMessage, String buttonData) {
+        if ("buttonGender".equals(buttonData)) {
             botStateCache.saveBotState(userId, BotState.SETGENDER);
-            sendMessage.setText("Вы сударъ иль сударыня?");
-            sendMessage.setReplyMarkup(buttonService.getGenderKeyboard());
-        } else if ("buttonName".equals(data)) {
-            botStateCache.saveBotState(userId, BotState.SETNAME);
-            sendMessage.setText("Как вас величать?");
-        } else if ("buttonDescription".equals(data)) {
-            botStateCache.saveBotState(userId, BotState.SETDESCRIPTION);
-            sendMessage.setText("Опишите себя.");
-        } else if ("buttonGenderSearch".equals(data)) {
-            botStateCache.saveBotState(userId, BotState.SETGENDERSEARCH);
-            sendMessage.setText("Кого вы ищите?");
-            sendMessage.setReplyMarkup(buttonService.getGenderSearchKeyboard());
-        } else if ("buttonSave".equals(data)) {
-            botStateCache.saveBotState(userId, BotState.PROFILE);
-            sendMessage.setText("Сохраненія измѣнены.");
 
+            sendMessage.setText("Вы сударь иль сударыня?");
+            sendMessage.setReplyMarkup(keyboardService.getGenderKeyboard());
+
+        } else if ("buttonName".equals(buttonData)) {
+            botStateCache.saveBotState(userId, BotState.SETNAME);
+
+            sendMessage.setText("Как вас величать?");
+
+        } else if ("buttonDescription".equals(buttonData)) {
+            botStateCache.saveBotState(userId, BotState.SETDESCRIPTION);
+
+            sendMessage.setText("Опишите себя.");
+
+        } else if ("buttonGenderSearch".equals(buttonData)) {
+            botStateCache.saveBotState(userId, BotState.SETGENDERSEARCH);
+
+            sendMessage.setText("Кого вы ищите?");
+            sendMessage.setReplyMarkup(keyboardService.getGenderSearchKeyboard());
+
+        } else if ("buttonSave".equals(buttonData)) {
             User user = serverDataService.createProfile(usersCache.getUsers().get(userId));
             usersCache.dump(userId);
 
-            bot.sendPhoto(sendMessage.getChatId(), user, buttonService.getProfileKeyboard());
-        } else if ("buttonCancel".equals(data)) {
             botStateCache.saveBotState(userId, BotState.PROFILE);
-            sendMessage.setText("Измѣненія отмѣнены.");
+
+            sendMessage.setText("Сохраненія измѣнены.");
+            bot.sendPhoto(
+                    sendMessage.getChatId(),
+                    user,
+                    keyboardService.getProfileKeyboard()
+            );
+
+        } else if ("buttonCancel".equals(buttonData)) {
             usersCache.dump(userId);
 
+            botStateCache.saveBotState(userId, BotState.PROFILE);
+
+            sendMessage.setText("Измѣненія отмѣнены.");
             bot.sendPhoto(
                     sendMessage.getChatId(),
                     serverDataService.getUserImageById(userId),
-                    buttonService.getProfileKeyboard()
+                    keyboardService.getProfileKeyboard()
             );
         }
     }
 
-    private void reactionForSetGender(long userId, SendMessage sendMessage, String data) {
-        String gender = "buttonMale".equals(data) ? "Сударъ" : "Сударыня";
+    /**
+     * Рекация на изменение пола.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForSetGender(long userId, SendMessage sendMessage, String buttonData) {
+        String gender = "buttonMale".equals(buttonData) ? "Сударь" : "Сударыня";
         usersCache.getUsers().get(userId).setGender(gender);
 
         botStateCache.saveBotState(userId, BotState.CHANGE);
+
         sendMessage.setText("Что ещё желаете помѣнять?");
-        sendMessage.setReplyMarkup(buttonService.getChangeKeyboard());
+        sendMessage.setReplyMarkup(keyboardService.getChangeKeyboard());
     }
 
-    private void reactionForSetGenderSearch(long userId, SendMessage sendMessage, String data) {
+    /**
+     * Рекация на изменение искомого пола.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForSetGenderSearch(long userId, SendMessage sendMessage, String buttonData) {
         String genderSearch;
-        if ("buttonMale".equals(data)) {
-            genderSearch = "Сударъ";
-        } else if ("buttonFemale".equals(data)) {
+        if ("buttonMale".equals(buttonData)) {
+            genderSearch = "Сударь";
+
+        } else if ("buttonFemale".equals(buttonData)) {
             genderSearch = "Сударыня";
+
         } else {
             genderSearch = "Всех";
         }
+
         usersCache.getUsers().get(userId).setGenderSearch(genderSearch);
 
         botStateCache.saveBotState(userId, BotState.CHANGE);
+
         sendMessage.setText("Что ещё желаете помѣнять?");
-        sendMessage.setReplyMarkup(buttonService.getChangeKeyboard());
+        sendMessage.setReplyMarkup(keyboardService.getChangeKeyboard());
     }
 
-    private void reactionForSearch(long userId, SendMessage sendMessage, String data) {
-        if ("buttonLeft".equals(data)) {
+    /**
+     * Рекация на использование клавиатуры в поиске.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForSearch(long userId, SendMessage sendMessage, String buttonData) {
+        if ("buttonLeft".equals(buttonData)) {
             bot.sendPhoto(
                     sendMessage.getChatId(),
                     searchedUsersCache.getSearchedUsersById(userId),
-                    buttonService.getSearchKeyboard()
+                    keyboardService.getSearchKeyboard()
             );
-        } else if ("buttonRight".equals(data)) {
-            String answer = serverDataService.likeUserById(userId, searchedUsersCache.getFoundUserById(userId));
 
+        } else if ("buttonRight".equals(buttonData)) {
+            String answer = serverDataService.likeUserById(userId, searchedUsersCache.getFoundUserById(userId));
             if (answer != null) {
                 sendMessage.setText(answer);
             }
-            User foundUser = searchedUsersCache.getSearchedUsersById(userId);
 
+            User foundUser = searchedUsersCache.getSearchedUsersById(userId);
             if (foundUser != null) {
-                bot.sendPhoto(sendMessage.getChatId(), foundUser, buttonService.getSearchKeyboard());
+                bot.sendPhoto(
+                        sendMessage.getChatId(),
+                        foundUser,
+                        keyboardService.getSearchKeyboard()
+                );
+
             } else {
                 searchedUsersCache.dump(userId);
+
                 botStateCache.saveBotState(userId, BotState.MENU);
+
                 sendMessage.setText("Больше нѣтъ анкетъ, возвратъ въ меню");
-                sendMessage.setReplyMarkup(buttonService.getMenuKeyboard());
+                sendMessage.setReplyMarkup(keyboardService.getMenuKeyboard());
             }
-        } else if ("buttonMenu".equals(data)) {
+
+        } else if ("buttonMenu".equals(buttonData)) {
             searchedUsersCache.dump(userId);
+
             botStateCache.saveBotState(userId, BotState.MENU);
+
             sendMessage.setText("Возвратъ въ меню");
-            sendMessage.setReplyMarkup(buttonService.getMenuKeyboard());
+            sendMessage.setReplyMarkup(keyboardService.getMenuKeyboard());
         }
     }
 
-    private void reactionForFavorites(long userId, SendMessage sendMessage, String data) {
-        if ("buttonLeft".equals(data)) {
+    /**
+     * Рекация на использование клавиатуры в любимцах.
+     *
+     * @param userId      id пользователя
+     * @param sendMessage заготовка сообщения
+     * @param buttonData  данные о кнопке
+     */
+    private void reactionForFavorites(long userId, SendMessage sendMessage, String buttonData) {
+        if ("buttonLeft".equals(buttonData)) {
             User favorite = favoritesCache.userFavoritesLeft(userId);
-            bot.sendPhoto(sendMessage.getChatId(), favorite, buttonService.getSearchKeyboard());
-        } else if ("buttonRight".equals(data)) {
+            bot.sendPhoto(
+                    sendMessage.getChatId(),
+                    favorite,
+                    keyboardService.getSearchKeyboard()
+            );
+
+        } else if ("buttonRight".equals(buttonData)) {
             User favorite = favoritesCache.userFavoritesRight(userId);
-            bot.sendPhoto(sendMessage.getChatId(), favorite, buttonService.getSearchKeyboard());
-        } else if ("buttonMenu".equals(data)) {
+            bot.sendPhoto(
+                    sendMessage.getChatId(),
+                    favorite,
+                    keyboardService.getSearchKeyboard()
+            );
+
+        } else if ("buttonMenu".equals(buttonData)) {
             favoritesCache.dump(userId);
+
             botStateCache.saveBotState(userId, BotState.MENU);
+
             sendMessage.setText("Возвратъ въ меню");
-            sendMessage.setReplyMarkup(buttonService.getMenuKeyboard());
+            sendMessage.setReplyMarkup(keyboardService.getMenuKeyboard());
         }
     }
 }

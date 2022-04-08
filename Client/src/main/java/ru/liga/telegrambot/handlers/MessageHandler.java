@@ -1,6 +1,7 @@
 package ru.liga.telegrambot.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -8,97 +9,133 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.liga.telegrambot.caches.BotStateCache;
 import ru.liga.telegrambot.caches.UsersCache;
 import ru.liga.telegrambot.entities.User;
-import ru.liga.telegrambot.service.ButtonService;
+import ru.liga.telegrambot.service.KeyboardService;
 import ru.liga.telegrambot.telegram.BotState;
 
+/**
+ * Обработчик сообщений.
+ */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MessageHandler {
+    /**
+     * Сервис клавиатур.
+     */
+    private final KeyboardService keyboardService;
+    /**
+     * Кеш состояний бота.
+     */
     private final BotStateCache botStateCache;
-    private final ButtonService buttonService;
+    /**
+     * Кеш пользователей.
+     */
     private final UsersCache usersCache;
 
+    /**
+     * Обработка сообщений взависимости от текущего состояния telegram-бота.
+     *
+     * @param message  сообщение
+     * @param botState состояние бота
+     * @return ответ на сообщение
+     */
     public BotApiMethod<?> handle(Message message, BotState botState) {
+        SendMessage sendMessage = new SendMessage();
+
         long userId = message.getFrom().getId();
         long chatId = message.getChatId();
 
-        SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
 
         switch (botState.name()) {
             case ("START"):
+                usersCache.saveUserCache(userId, new User(userId));
+
                 botStateCache.saveBotState(userId, BotState.ENTERGENDER);
-                usersCache.saveUserCache(userId, new User());
-                usersCache.getUsers().get(userId).setId(userId);
 
-                sendMessage.setText("Вы сударъ иль сударыня?");
-                sendMessage.setReplyMarkup(buttonService.getGenderKeyboard());
+                sendMessage.setText("Вы сударь иль сударыня?");
+                sendMessage.setReplyMarkup(keyboardService.getGenderKeyboard());
+                break;
 
-                return sendMessage;
             case ("ENTERGENDER"):
             case ("SETGENDER"):
                 sendMessage.setText("Используйте меню для выбора.\n" +
-                        "Вы сударъ иль сударыня?");
-                sendMessage.setReplyMarkup(buttonService.getGenderKeyboard());
+                        "Вы сударь иль сударыня?");
+                sendMessage.setReplyMarkup(keyboardService.getGenderKeyboard());
+                break;
 
-                return sendMessage;
             case ("ENTERGENDERSEARCH"):
             case ("SETGENDERSEARCH"):
                 sendMessage.setText("Используйте меню для выбора.\n" +
                         "Кого вы ищите?");
-                sendMessage.setReplyMarkup(buttonService.getGenderSearchKeyboard());
+                sendMessage.setReplyMarkup(keyboardService.getGenderSearchKeyboard());
+                break;
 
-                return sendMessage;
             case ("ENTERNAME"):
-                botStateCache.saveBotState(userId, BotState.ENTERDESCRIPTION);
                 usersCache.getUsers().get(userId).setName(message.getText());
 
-                sendMessage.setText("Опишите себя.");
+                botStateCache.saveBotState(userId, BotState.ENTERDESCRIPTION);
 
-                return sendMessage;
+                sendMessage.setText("Опишите себя.");
+                break;
+
             case ("ENTERDESCRIPTION"):
-                botStateCache.saveBotState(userId, BotState.ENTERGENDERSEARCH);
                 usersCache.getUsers().get(userId).setDescription(message.getText());
 
-                sendMessage.setText("Кого вы ищите?");
-                sendMessage.setReplyMarkup(buttonService.getGenderSearchKeyboard());
+                botStateCache.saveBotState(userId, BotState.ENTERGENDERSEARCH);
 
-                return sendMessage;
+                sendMessage.setText("Кого вы ищите?");
+                sendMessage.setReplyMarkup(keyboardService.getGenderSearchKeyboard());
+                break;
+
             case ("MENU"):
                 sendMessage.setText("Используйте представленное меню.");
-                sendMessage.setReplyMarkup(buttonService.getMenuKeyboard());
+                sendMessage.setReplyMarkup(keyboardService.getMenuKeyboard());
+                break;
 
-                return sendMessage;
+            case ("PROFILE"):
+                sendMessage.setText("Используйте представленное меню.");
+                sendMessage.setReplyMarkup(keyboardService.getProfileKeyboard());
+                break;
+
             case ("CHANGE"):
                 sendMessage.setText("Используйте представленное меню.\n" +
                         "Что желаете помѣнять?");
-                sendMessage.setReplyMarkup(buttonService.getChangeKeyboard());
+                sendMessage.setReplyMarkup(keyboardService.getChangeKeyboard());
+                break;
 
-                return sendMessage;
             case ("SETNAME"):
                 usersCache.getUsers().get(userId).setName(message.getText());
 
                 botStateCache.saveBotState(userId, BotState.CHANGE);
-                sendMessage.setText("Что ещё желаете помѣнять?");
-                sendMessage.setReplyMarkup(buttonService.getChangeKeyboard());
 
-                return sendMessage;
+                sendMessage.setText("Что ещё желаете помѣнять?");
+                sendMessage.setReplyMarkup(keyboardService.getChangeKeyboard());
+                break;
+
             case ("SETDESCRIPTION"):
                 usersCache.getUsers().get(userId).setDescription(message.getText());
 
                 botStateCache.saveBotState(userId, BotState.CHANGE);
-                sendMessage.setText("Что ещё желаете помѣнять?");
-                sendMessage.setReplyMarkup(buttonService.getChangeKeyboard());
 
-                return sendMessage;
+                sendMessage.setText("Что ещё желаете помѣнять?");
+                sendMessage.setReplyMarkup(keyboardService.getChangeKeyboard());
+                break;
+
             case ("SEARCH"):
             case ("FAVORITES"):
                 sendMessage.setText("Используйте представленное меню.");
-                sendMessage.setReplyMarkup(buttonService.getSearchKeyboard());
+                sendMessage.setReplyMarkup(keyboardService.getSearchKeyboard());
+                break;
 
-                return sendMessage;
             default:
+                log.debug("Пользователь: {}. Состояние бота: {}. Сообщение не обрабатывается.",
+                        userId, botState.name());
                 return null;
         }
+
+        log.debug("Пользователь: {}. Состояние бота: {}. Сообщение обработано.",
+                userId, botState.name());
+        return sendMessage;
     }
 }

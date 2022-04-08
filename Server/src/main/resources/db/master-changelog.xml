@@ -6,6 +6,6 @@
 
     <include file="db/scripts/001-create-accounts.xml"/>
     <include file="db/scripts/002-create-accounts_favorites.xml"/>
-    <include file="db/scripts/003-insert-accounts-data.xml"/>
+    <include file="db/scripts/003-insert-accounts-test-data.xml"/>
 
 </databaseChangeLog>
